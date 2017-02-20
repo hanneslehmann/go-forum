@@ -4,9 +4,13 @@ import (
 	"log"
   "time"
   "fmt"
+  "os"
+  "io/ioutil"
   "net/http"
   "strconv"
+  "path/filepath"
   "encoding/json"
+  "text/template"
   "github.com/julienschmidt/httprouter"
   "./common"
 )
@@ -29,6 +33,7 @@ type topicInterface interface {
 type forum struct {
   Name string         `json:"name"`
   LatestTopic string  `json:"latestTopic"`
+  Template string     `json:"template"`
   Topics []topic      `json:"topics"`
 }
 
@@ -40,6 +45,7 @@ type topic struct {
   Created time.Time   `json:"created"`
   LatestPost string   `json:"latestPost"`
   Closed bool         `json:"closed"`
+  Template string     `json:"template"`
   Posts []post        `json:"posts"`
 }
 
@@ -71,6 +77,7 @@ func (f forum) CreateTopic(t topic) forum{
   t.Closed=false
   f.LatestTopic=t.Id
   f.Topics = append(f.Topics, t)
+  f.writeHTML("static/index.html")
   return f
 }
 
@@ -84,6 +91,7 @@ func (f forum) UpdateTopic(t topic) forum{
   if topicI>=0{
     f.Topics[topicI]=t
   }
+  f.writeHTML("static/index.html")
   return f
 }
 
@@ -110,6 +118,7 @@ func (t topic) PostTo(p post) topic {
   p.Created=time.Now()
   t.LatestPost=p.Id
   t.Posts = append(t.Posts, p)
+  t.writeHTML("static/topic/"+t.Id+"/index.html")
   return t
 }
 
@@ -141,6 +150,7 @@ func init() {
     Author: "Hannes",
     Comments: 0,
     Created: time.Now(),
+    Template: "templates/discussion.html",
     Posts: []post {
       post{ Id:"0",Text:"Topic1 - No text 1",Author:"Hannes1",Created:time.Now() },
       post{ Id:"1",Text:"Topic1 - No text 2",Author:"Hannes2",Created:time.Now(),},
@@ -152,6 +162,7 @@ func init() {
     Author: "Hannes",
     Comments: 0,
     Created: time.Now(),
+    Template: "templates/discussion.html",
     Posts: []post {
       post{ Id:"0",Text:"Topic2 - No text 1",Author:"Hannes1",Created:time.Now() },
       post{ Id:"1",Text:"Topic2 - No text 2",Author:"Hannes2",Created:time.Now(),},
@@ -159,8 +170,10 @@ func init() {
   }
   myforum = forum{
     Name: "My Forum",
+    Template: "templates/forum.html",
     Topics: []topic{t,t2},
   }
+  myforum.writeHTML("static/index.html")
 }
 
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -204,15 +217,68 @@ func NewPost (w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
   w.Write(b)
 }
 
+func check(e error) {
+    if e != nil {
+        panic(e)
+    }
+}
+
+func writeForumToJsonFile(target string, f forum){
+
+}
+
+func (t topic) writeHTML(output string){
+  var app map[string]interface{}
+  input_data, err := ioutil.ReadFile(t.Template)
+  check(err)
+
+  b, _ := json.Marshal(t)
+  err = json.Unmarshal(b, &app)
+  check(err)
+
+  tmpl, err := template.New("test").Parse(string(input_data))
+  check(err)
+  fName := filepath.Base(output)
+  path := output[:len(output)-len(fName)]
+  if _, err := os.Stat(path); os.IsNotExist(err) {
+    os.Mkdir(path, os.ModePerm)
+  }
+
+  fi, err := os.Create(output)
+  check(err)
+
+  err = tmpl.Execute(fi, app)
+  check(err)
+}
+
+func (f forum) writeHTML(output string){
+  var app map[string]interface{}
+  input_data, err := ioutil.ReadFile(f.Template)
+  check(err)
+
+  b, _ := json.Marshal(f)
+  err = json.Unmarshal(b, &app)
+  check(err)
+
+  tmpl, err := template.New("test").Parse(string(input_data))
+  check(err)
+
+  fi, err := os.Create(output)
+  check(err)
+
+  err = tmpl.Execute(fi, app)
+  check(err)
+}
 
 func setupRoutes(router *httprouter.Router) {
   // login page
-  router.GET("/", Index)                           // re-direct to login page
+                            // re-direct to login page
   router.GET("/topic", Topics)
   router.POST("/topic", NewTopic)
   router.GET("/topic/:topic", Topic)
   router.GET("/topic/:topic/post/:post", Post)
   router.POST("/topic/:topic", NewPost)
+  router.ServeFiles("/forum/*filepath", http.Dir("static"))
 }
 
 
