@@ -14,9 +14,9 @@
 <tr>
   <td colspan="2" >
     <div class="header">
-      <h1><a href="/" class="green">{{.name}}</a>
+      <h1><a href="/forum" class="green">{{.name}}</a>
         &nbsp;&nbsp;<a href="/rss" title="RSS feed">
-        <img src="rss.gif" width="36" alt="RSS feed" valign="middle" border="0" height="14"></a>
+        <img src="/forum/img/rss.gif" width="36" alt="RSS feed" valign="middle" border="0" height="14"></a>
       </h1>
     </div>
   </td>
@@ -24,21 +24,21 @@
 <tr>
   <td class="sidebar">
 <p><span style="float: right;">Not logged in. <a href="/login?redirect=/">Log in with Twitter</a></span></p>
-<p><a href="/newpost">Create new topic</a></p>
+<p><a href="/forum/topic/new/">Create new topic</a></p>
 
 
 </td>
   <td class="contents">
 
     <div class="topics">
-{{range $topic:=.topics}} <div class="topic">
+{{range $key,$topic:=.topics}} <div class="topic">
             <a class="" href="/forum/topic/{{$topic.id}}">{{$topic.title}}</a>
-            <em>{{$topic.author}}</em> <span>({{$topic.comments}} comments)</span>
+            <em>{{$topic.author}} at {{date $topic.updated}}</em> <span>({{$topic.comments}} comments)</span>
     </div>{{end}}
     </div>
 
     <div class="buttons">
-      <a accesskey="n" href="/newpost"><img src="/img/new.gif" width="13" alt="New topic" border="0" height="14"> <u>N</u>ew topic</a>
+      <a accesskey="n" href="/forum/topic/new/"><img src="/forum/img/new.gif" width="13" alt="New topic" border="0" height="14"> <u>N</u>ew topic</a>
     </div>
   </td>
 </tr>

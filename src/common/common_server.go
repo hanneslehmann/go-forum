@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"crypto/tls"
@@ -6,20 +6,26 @@ import (
 	"net/http"
 )
 
-type embeddedServer struct {
+
+type EmbeddedServer struct {
 
 	/*
-		  http://blog.davidvassallo.me/2015/06/17/practical-embedding-in-golang/
-			custom struct that embeds golang's standard http.Server type
-			another way of looking at this is that embeddedServer "inherits" from http.Server,
-			though this is not strictly accurate. Have a look at note below for additional information
+	http://blog.davidvassallo.me/2015/06/17/practical-embedding-in-golang/
+	custom struct that embeds golang's standard http.Server type
+	another way of looking at this is that embeddedServer "inherits" from http.Server,
+	though this is not strictly accurate. Have a look at note below for additional information
 	*/
 	http.Server
 	webserverCertificate string
 	webserverKey         string
 }
+func (srv *EmbeddedServer) New (wsCertificate string, wsKey string)  {
+	srv.webserverCertificate = wsCertificate
+	srv.webserverKey = wsKey
+}
 
-func (srv *embeddedServer) ListenAndServeTLS(addr string, handler http.Handler) error {
+
+func (srv *EmbeddedServer) ListenAndServeTLS(addr string, handler http.Handler) error {
 
 	/*
 		This is where we "hide" or "override" the default "ListenAndServeTLS" method so we modify it to accept
