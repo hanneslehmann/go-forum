@@ -1,0 +1,4 @@
+- Add validation in API and send back responses, show them to user
+- Re-think captcha usage
+- Add login function, remove name input (take from cookie)
+- Close api for use by logged in users only
